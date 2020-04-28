@@ -44,31 +44,114 @@
 /* Private variables ---------------------------------------------------------*/
 SPI_HandleTypeDef hspi1;
 
+TIM_HandleTypeDef htim2;
+
 /* USER CODE BEGIN PV */
 struct display_config cfg;
+
+
+
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
 static void MX_SPI1_Init(void);
+static void MX_TIM2_Init(void);
 /* USER CODE BEGIN PFP */
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 {
  if(HAL_GPIO_ReadPin(GPIOD, GPIO_PIN_0) == GPIO_PIN_RESET)
  {
-	 char hw[] = "TETRIS";
-	   	memcpy(&(cfg.buffer[0][4]), hw, strlen(hw));
-	   	char hw1[] = "Play";
-	   	  	memcpy(&(cfg.buffer[2][4]), hw1, strlen(hw1));
-	   	char hw2[] = "Ranking";
-	   	    	memcpy(&(cfg.buffer[3][4]), hw2, strlen(hw2));
-	   	char hw3[] = "Restart";
-	   	    	 memcpy(&(cfg.buffer[4][4]), hw3, strlen(hw3));
-	   	display_rewrite_buffer(&cfg);
+	 print_figura(kwadrat);
+
  }
+ else if(HAL_GPIO_ReadPin(GPIOD, GPIO_PIN_1) == GPIO_PIN_RESET)
+ {
+	 print_figura(linia);
+ }
+
+ else if(HAL_GPIO_ReadPin(GPIOD, GPIO_PIN_2) == GPIO_PIN_RESET)
+ {
+	 print_figura(L);
+ }
+
 }
 
+void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim){
+if(htim->Instance == TIM2)
+{
+
+}
+}
+
+void start()
+{
+	cfg.spi = &hspi1;
+	cfg.reset_port = RST_GPIO_Port;
+	cfg.reset_pin = RST_Pin;
+	cfg.dc_port = DC_GPIO_Port;
+	cfg.dc_pin = DC_Pin;
+	cfg.ce_port = CE_GPIO_Port;
+	cfg.ce_pin = CE_Pin;
+
+	display_setup(&cfg);
+	display_clear_buffer(&cfg);
+	display_rewrite_buffer(&cfg);
+ 	display_set_dxy(&cfg, horizontal, 0, 0);
+ 	display_plansza(&cfg,Plansza,sizeof(Plansza));
+}
+
+void new_shape()
+{
+	uint8_t shape[8][8];
+}
+
+void print_figura(uint8_t figura[8][8])
+{
+	 int tablica_wyswietlana[8];
+		 int data = 0;
+		 int n = 0;
+		 int liczba = 0;
+		 int row = 0;
+		 for(int i = 1; i <= 1; i++){
+			 row = i*8 - 1;
+			 for (int col = 0; col <8; col++){
+		    	if(figura[row][col] == 1)
+		    		data = data + 8;
+		    	row=row-1;
+		    	if(figura[row][col] == 1)
+		    		data = data + 4;
+		    	row=row-1;
+		    	if(figura[row][col] == 1)
+		    		data = data + 2;
+		    	row=row-1;
+		    	if(figura[row][col] == 1)
+		    		data = data + 1;
+		    	row=row-1;
+		    	if(n == 0){
+		    		data=data*16;
+		    		n = 1 ;
+		    		col=col-1;
+		    	}
+
+		    	else{
+		    		n = 0;
+		    		tablica_wyswietlana[liczba]=data;
+		    		data = 0;
+		    		liczba = liczba + 1;
+		    		row = i*8 - 1;
+		    	}
+
+		    }
+
+		}
+		//display_rewrite_buffer(&cfg);
+		display_set_dxy(&cfg, horizontal, 30, 10);
+		for(int i=0;i<8;i++){
+		    display_write_data(&cfg, tablica_wyswietlana[i]);
+		}
+}
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -106,37 +189,22 @@ int main(void)
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
   MX_SPI1_Init();
+  MX_TIM2_Init();
   /* USER CODE BEGIN 2 */
+  	HAL_TIM_Base_Start_IT(&htim2);
 
-  	cfg.spi = &hspi1;
-  	cfg.reset_port = RST_GPIO_Port;
-  	cfg.reset_pin = RST_Pin;
-  	cfg.dc_port = DC_GPIO_Port;
-  	cfg.dc_pin = DC_Pin;
-  	cfg.ce_port = CE_GPIO_Port;
-  	cfg.ce_pin = CE_Pin;
 
-	display_setup(&cfg);
-	display_clear_buffer(&cfg);
-	display_plansza(&cfg,Plansza,sizeof(Plansza));
-	/*for (uint8_t row = 0; row < 6; row++) {
-		for (uint8_t col = 0; col < 10; col++) {
-			for (uint8_t j = 0; j < 4; j++)
-				display_write_data(&cfg, 0x0F);
-			for (uint8_t j = 0; j < 4; j++)
-			display_write_data(&cfg, 0xF0);
-		}
-		for (uint8_t j = 0; j < 4; j++)
-			display_write_data(&cfg, 0x0F);
-	}*/
+	start();
+
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-
-	//HAL_GPIO_EXTI_Callback(GPIO_PIN_0);
+		HAL_GPIO_EXTI_Callback(GPIO_PIN_0);
+		HAL_GPIO_EXTI_Callback(GPIO_PIN_1);
+		HAL_GPIO_EXTI_Callback(GPIO_PIN_2);
 
     /* USER CODE END WHILE */
 
@@ -222,6 +290,51 @@ static void MX_SPI1_Init(void)
   /* USER CODE BEGIN SPI1_Init 2 */
 
   /* USER CODE END SPI1_Init 2 */
+
+}
+
+/**
+  * @brief TIM2 Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_TIM2_Init(void)
+{
+
+  /* USER CODE BEGIN TIM2_Init 0 */
+
+  /* USER CODE END TIM2_Init 0 */
+
+  TIM_ClockConfigTypeDef sClockSourceConfig = {0};
+  TIM_MasterConfigTypeDef sMasterConfig = {0};
+
+  /* USER CODE BEGIN TIM2_Init 1 */
+
+  /* USER CODE END TIM2_Init 1 */
+  htim2.Instance = TIM2;
+  htim2.Init.Prescaler = 23999;
+  htim2.Init.CounterMode = TIM_COUNTERMODE_UP;
+  htim2.Init.Period = 999;
+  htim2.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
+  htim2.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
+  if (HAL_TIM_Base_Init(&htim2) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  sClockSourceConfig.ClockSource = TIM_CLOCKSOURCE_INTERNAL;
+  if (HAL_TIM_ConfigClockSource(&htim2, &sClockSourceConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  sMasterConfig.MasterOutputTrigger = TIM_TRGO_RESET;
+  sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
+  if (HAL_TIMEx_MasterConfigSynchronization(&htim2, &sMasterConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN TIM2_Init 2 */
+
+  /* USER CODE END TIM2_Init 2 */
 
 }
 

@@ -82,6 +82,7 @@ void display_write_data(struct display_config * cfg, uint8_t data) {
     // Blokada wejťcia zegarowego
     HAL_GPIO_WritePin(cfg->ce_port, cfg->ce_pin, GPIO_PIN_SET);
 }
+
 void display_plansza(struct display_config * cfg, uint8_t* data,int size) {
     // Wybˇr tryby transmisji polece˝
     HAL_GPIO_WritePin(cfg->dc_port, cfg->dc_pin, GPIO_PIN_SET);
@@ -109,7 +110,7 @@ void display_rewrite_buffer(struct display_config * cfg)
 {
     display_set_dxy(cfg, horizontal, 0, 0);
 
-    for(uint8_t i=0; i<5; i++)
+    for(uint8_t i=0; i<6; i++)
         for(uint8_t j=0; j<14; j++)
             display_write_char(cfg, cfg->buffer[i][j]);
 }
