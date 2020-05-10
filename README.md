@@ -10,6 +10,6 @@ Jak skonfigurować płytkę:
 
 4.PB5 - GPIO_Output DO SCE
 
-5.PB6 - GPIO_Output DO RST
+5.PB4 - GPIO_Output DO RST
 
-6.PB7 - GPIO_Output DO DC
+6.PB3 - GPIO_Output DO DC
