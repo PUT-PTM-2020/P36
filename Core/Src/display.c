@@ -83,7 +83,7 @@ void display_write_data(struct display_config * cfg, uint8_t data) {
     HAL_GPIO_WritePin(cfg->ce_port, cfg->ce_pin, GPIO_PIN_SET);
 }
 
-void display_plansza(struct display_config * cfg, uint8_t* data,int size) {
+void display_plansza(struct display_config * cfg, uint8_t* data) {
     // Wybˇr tryby transmisji polece˝
     HAL_GPIO_WritePin(cfg->dc_port, cfg->dc_pin, GPIO_PIN_SET);
 
@@ -91,7 +91,7 @@ void display_plansza(struct display_config * cfg, uint8_t* data,int size) {
     HAL_GPIO_WritePin(cfg->ce_port, cfg->ce_pin, GPIO_PIN_RESET);
     // Transmisja danych interfejsem SPI
    // for (int i = 0; i < 432; i++)
-    HAL_SPI_Transmit(cfg->spi, data, 500,1000);
+    HAL_SPI_Transmit(cfg->spi, data, 504,1000);
 
     // Blokada wejťcia zegarowego
     HAL_GPIO_WritePin(cfg->ce_port, cfg->ce_pin, GPIO_PIN_SET);
