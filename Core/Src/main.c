@@ -42,15 +42,17 @@
 time_t t;
 void new_shape();
 void print_figura();
-void display_srodek(uint8_t plansza_wyswietlana[48][34]);
+void display_srodek(uint8_t plansza_wyswietlana[48][38]);
 void dodawaniewartoscidotablicy();
-_Bool check_table(uint8_t table[48][34]);
+_Bool check_table(uint8_t table[48][38]);
 void czyszczenie();
 void game();
 void random_shape();
 _Bool game_over();
 void rotate();
 void full_line();
+void punkty();
+void menu_();
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -62,117 +64,127 @@ void full_line();
 ADC_HandleTypeDef hadc1;
 DMA_HandleTypeDef hdma_adc1;
 
+DAC_HandleTypeDef hdac;
+
 SPI_HandleTypeDef hspi1;
 
 TIM_HandleTypeDef htim2;
+TIM_HandleTypeDef htim4;
+TIM_HandleTypeDef htim6;
 
 /* USER CODE BEGIN PV */
 struct display_config cfg;
 static uint8_t shape[8][8];
 int warx = 12,wary = 4;
-int round=0, next_round = 1;
-
+int round = 1, next_round = 1;
+int punkciki= 0;
 uint16_t Joystick[2];
+int value;
+int gameon = 0 ,menu = 1;
+int menuvalue = 0 ;
+int z;
+extern unsigned char rawData[122489];
 
-uint8_t tablica_czysta[48][34] = {
-				{1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1},
-				{1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1},
-				{0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
-				{0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
-				{0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
-				{0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
-				{0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
-				{0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
-				{0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
-				{0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
-				{0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
-				{0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
-				{0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
-				{0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
-				{0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
-				{0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
-				{0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
-				{0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
-				{0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
-				{0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
-				{0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
-				{0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
-				{0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
-				{0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
-				{0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
-				{0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
-				{0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
-				{0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
-				{0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
-				{0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
-				{0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
-				{0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
-				{0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
-				{0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
-				{0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
-				{0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
-				{0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
-				{0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
-				{0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
-				{0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
-				{0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
-				{0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
-				{0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
-				{0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
-				{0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
-				{0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
-				{1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1},
-				{1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1}
+
+uint8_t tablica_czysta[48][38] = {
+				{1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1},
+				{1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1},
+				{1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1},
+				{1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1},
+				{1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1},
+				{1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1},
+				{1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1},
+				{1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1},
+				{1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1},
+				{1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1},
+				{1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1},
+				{1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1},
+				{1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1},
+				{1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1},
+				{1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1},
+				{1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1},
+				{1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1},
+				{1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1},
+				{1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1},
+				{1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1},
+				{1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1},
+				{1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1},
+				{1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1},
+				{1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1},
+				{1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1},
+				{1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1},
+				{1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1},
+				{1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1},
+				{1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1},
+				{1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1},
+				{1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1},
+				{1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1},
+				{1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1},
+				{1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1},
+				{1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1},
+				{1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1},
+				{1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1},
+				{1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1},
+				{1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1},
+				{1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1},
+				{1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1},
+				{1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1},
+				{1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1},
+				{1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1},
+				{1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1},
+				{1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1},
+				{1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1},
+				{1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1}
 };
-uint8_t plansza_wyswietlana[48][34] = {
-				{1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1},
-				{1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1},
-				{0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
-				{0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
-				{0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
-				{0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
-				{0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
-				{0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
-				{0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
-				{0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
-				{0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
-				{0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
-				{0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
-				{0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
-				{0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
-				{0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
-				{0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
-				{0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
-				{0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
-				{0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
-				{0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
-				{0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
-				{0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
-				{0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
-				{0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
-				{0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
-				{0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
-				{0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
-				{0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
-				{0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
-				{0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
-				{0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
-				{0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
-				{0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
-				{0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
-				{0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
-				{0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
-				{0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
-				{0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
-				{0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
-				{0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
-				{0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
-				{0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
-				{0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
-				{0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
-				{0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0},
-				{1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1},
-				{1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1}
+uint8_t plansza_wyswietlana[48][38] = {
+		{1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1},
+		{1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1},
+		{1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1},
+		{1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1},
+		{1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1},
+		{1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1},
+		{1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1},
+		{1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1},
+		{1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1},
+		{1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1},
+		{1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1},
+		{1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1},
+		{1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1},
+		{1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1},
+		{1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1},
+		{1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1},
+		{1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1},
+		{1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1},
+		{1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1},
+		{1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1},
+		{1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1},
+		{1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1},
+		{1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1},
+		{1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1},
+		{1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1},
+		{1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1},
+		{1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1},
+		{1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1},
+		{1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1},
+		{1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1},
+		{1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1},
+		{1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1},
+		{1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1},
+		{1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1},
+		{1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1},
+		{1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1},
+		{1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1},
+		{1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1},
+		{1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1},
+		{1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1},
+		{1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1},
+		{1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1},
+		{1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1},
+		{1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1},
+		{1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1},
+		{1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1},
+		{1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1},
+		{1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1}
 };
 
 /* USER CODE END PV */
@@ -181,9 +193,12 @@ uint8_t plansza_wyswietlana[48][34] = {
 void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
 static void MX_SPI1_Init(void);
+static void MX_DAC_Init(void);
+static void MX_TIM2_Init(void);
+static void MX_TIM6_Init(void);
 static void MX_DMA_Init(void);
 static void MX_ADC1_Init(void);
-static void MX_TIM2_Init(void);
+static void MX_TIM4_Init(void);
 /* USER CODE BEGIN PFP */
 
 
@@ -192,27 +207,56 @@ if(htim->Instance == TIM2)
 	{
 	if(Joystick[0] < 1000 && Joystick[1]>1000 && Joystick[1]<3000 )
 	{//lewo
-		warx = warx -2;
+		czyszczenie();
+		warx = warx + 2;
+		dodawaniewartoscidotablicy(plansza_wyswietlana);
+
+		if(check_table(plansza_wyswietlana) == 0)
+		{
+			warx = warx - 2;
+			czyszczenie();
+			dodawaniewartoscidotablicy(plansza_wyswietlana);
+		}
+
 	}
-	else if(Joystick[0] > 3000  && Joystick[1]>1000 && Joystick[1]<3000)
+	else if(Joystick[0] > 2500  && Joystick[1]>1000 && Joystick[1]<3000)
 	{//prawo
-		warx = warx +2;
+		czyszczenie();
+		warx = warx - 2;
+		dodawaniewartoscidotablicy(plansza_wyswietlana);
+
+		if(check_table(plansza_wyswietlana) == 0)
+		{
+			warx = warx + 2;
+			czyszczenie();
+			dodawaniewartoscidotablicy(plansza_wyswietlana);
+		}
 	}
 	else if(Joystick[0]>1000 && Joystick[0]<3000  && Joystick[1] < 1000)
-	{//gora
+	{////gora
 			rotate();
+			dodawaniewartoscidotablicy(plansza_wyswietlana);
 	}
 	else if(Joystick[0]>1000 && Joystick[0]<3000  && Joystick[1] > 3000)
 	{//dol
 			wary = wary + 2;
+			dodawaniewartoscidotablicy(plansza_wyswietlana);
+
 	}
-	dodawaniewartoscidotablicy(plansza_wyswietlana);
+	else
+	{
+		dodawaniewartoscidotablicy(plansza_wyswietlana);
+	}
+
+if (gameon == 1){
+
+
 
 	display_rewrite_buffer(&cfg);
 	display_set_dxy(&cfg, horizontal, 0, 0);
 	display_plansza(&cfg,Plansza);
 	display_srodek(plansza_wyswietlana);
-
+	punkty();
 	if(check_table(plansza_wyswietlana))
 	     {
 		 wary=wary+2;
@@ -231,9 +275,10 @@ if(htim->Instance == TIM2)
 		display_set_dxy(&cfg, horizontal, 0, 0);
 		display_plansza(&cfg,Plansza);
 		display_srodek(plansza_wyswietlana);
+		punkty();
 
 		for (int i = 0 ; i < 48; i++) {
-		            for (int j = 0; j < 34; j++)
+		            for (int j = 0; j < 38; j++)
 		             {
 		                tablica_czysta[i][j] = plansza_wyswietlana[i][j];
 		             }
@@ -244,8 +289,9 @@ if(htim->Instance == TIM2)
 		if(game_over()) //check czy koniec gry
 		{
 			 next_round = 0;
+			 display_clear_buffer(&cfg);
 			 char hw[] = "Koniec gry";
-			 memcpy(&(cfg.buffer[2][3]), hw, strlen(hw));
+			 memcpy(&(cfg.buffer[2][2]), hw, strlen(hw));
 			 display_rewrite_buffer(&cfg);
 		}
 		else
@@ -257,9 +303,15 @@ if(htim->Instance == TIM2)
 		 	round = round +1;
 		}
   	 	HAL_TIM_Base_Stop_IT(&htim2);
+	  }
 	}
 
-
+/*if(htim->Instance == TIM6)
+	{	//y+= 0.01;
+	    z++;
+	  if(z == 122489)
+	    	z=0;
+  }*/
 
 	}
 }
@@ -277,18 +329,17 @@ void start() //koniec gierki
 	display_setup(&cfg);
 	display_clear_buffer(&cfg);
 	display_rewrite_buffer(&cfg);
- 	display_set_dxy(&cfg, horizontal, 0, 0);
- 	display_plansza(&cfg,Plansza);
- 	display_srodek(plansza_wyswietlana);
 
 }
 
 _Bool game_over()
 {
-	for(int i =0; i < 36; i++)
+	for(int i = 3 ; i < 36; i++)
 	{
-		if(tablica_czysta[3][i] > 0)
+		if(tablica_czysta[3][i] > 0){
+			gameon = 0;
 			return 1;
+		}
 	}
 	return 0;
 }
@@ -422,16 +473,16 @@ void random_shape()
 }
 
 // wyswietla tablice z gra
-void display_srodek(uint8_t srodek[48][34])
+void display_srodek(uint8_t srodek[48][38])
 {
 	for(int wiersz = 1; wiersz < 7; wiersz++)
 	{
-		int tablica_wyswietlana[34];
+		int tablica_wyswietlana[38];
 					 int data = 0;
 					 int n = 0;
 					 int liczba = 0;
 					 int row = wiersz*8-1;
-						 for (int col = 0; col <34; col++){
+						 for (int col = 0; col <38; col++){
 					    	if(srodek[row][col] == 1)
 					    		data = data + 8;
 					    	row=row-1;
@@ -460,8 +511,8 @@ void display_srodek(uint8_t srodek[48][34])
 
 					    }
 					}
-					display_set_dxy(&cfg, horizontal, 16, wiersz-1);
-						for(int i=0;i<34;i++){
+					display_set_dxy(&cfg, horizontal, 14, wiersz-1);
+						for(int i=0;i<38;i++){
 						display_write_data(&cfg, tablica_wyswietlana[i]);
 		}
 	}
@@ -471,7 +522,7 @@ void display_srodek(uint8_t srodek[48][34])
 void czyszczenie()
 {
     for (int i = 0 ; i < 48; i++) {
-            for (int j = 0; j < 34; j++)
+            for (int j = 0; j < 38; j++)
              {
                 plansza_wyswietlana[i][j] = tablica_czysta[i][j];
              }
@@ -493,11 +544,11 @@ void dodawaniewartoscidotablicy()
 }
 
 // sprawdza czy w tablicy nałożyły sie klocki (false - nałożyły sie, true- jest git)
-_Bool check_table(uint8_t table[48][34])
+_Bool check_table(uint8_t table[48][38])
 {
 	for(int i=0;i<48;i++)
 	{
-		for(int j=0;j<34;j++)
+		for(int j=0;j<38;j++)
 		{
 			if(table[i][j] > 1)
 				return 0;
@@ -508,19 +559,24 @@ _Bool check_table(uint8_t table[48][34])
 
 void full_line()
 {int licznik =0;
+
     for(int i=2;i<46;i++)
         {
-         for(int j=0;j<34;j++)
+         for(int j=0;j<38;j++)
              {
                if(plansza_wyswietlana[i][j] == 1)
                 {
                     licznik = licznik +1;
                 }
-                if(licznik == 34)
+                if(licznik == 38)
                 {
+                	//zmiana punktów
+
+                    punkciki = punkciki + (38*round);
+
                     while(i>3)
                     	{
-                    		for(int k = 0; k < 34; k++)
+                    		for(int k = 0; k < 38; k++)
                     		{
                                 plansza_wyswietlana[i + 1][k] = plansza_wyswietlana[i][k];
                                 //punkty
@@ -533,6 +589,132 @@ void full_line()
             }
          licznik =0;
         }
+}
+
+void punkty()
+{   int punkty_wyswietlane[6] = {0,0,0,0,0,0};
+
+    punkty_wyswietlane[5] = punkciki%10;
+    punkty_wyswietlane[4] = (punkciki%100 - punkty_wyswietlane[5])/10;
+    punkty_wyswietlane[3] = (punkciki%1000 - (punkty_wyswietlane[4]*10)- punkty_wyswietlane[5])/100;
+    punkty_wyswietlane[2] = (punkciki%10000 - (punkty_wyswietlane[3]*100)- (punkty_wyswietlane[4]*10)- punkty_wyswietlane[5])/1000;
+    punkty_wyswietlane[1] = (punkciki%100000- (punkty_wyswietlane[2]*1000) - (punkty_wyswietlane[3]*100)- (punkty_wyswietlane[4]*10)- punkty_wyswietlane[5])/10000;
+    punkty_wyswietlane[0] = punkciki/100000;
+
+
+
+    display_set_dxy(&cfg, horizontal,56,2);
+     for(int j=0;j<6;j++){
+        for(int i=0;i<3;i++){
+       display_write_data(&cfg, ASCII2[punkty_wyswietlane[j]+16][i]);
+      }
+      display_write_data(&cfg, 0x00);
+    }
+}
+
+void menu_()
+{
+			 display_clear_buffer(&cfg);
+		 	 char hw[] = "TETRIS";
+		 	 memcpy(&(cfg.buffer[0][4]), hw, strlen(hw));
+		 	 if (menuvalue == 0)
+		 	 {
+			 	   	char hw1[] = "-> Play";
+			 	    memcpy(&(cfg.buffer[2][2]), hw1, strlen(hw1));
+
+		 	 }
+		 	 else
+		 	 {
+			 	   	char hw1[] = "Play";
+			 	    memcpy(&(cfg.buffer[2][4]), hw1, strlen(hw1));
+		 	 }
+
+		 	 if (menuvalue == 1)
+		 	 {
+
+		 		 	 char hw2[] = "-> Credits";
+		 	   		memcpy(&(cfg.buffer[3][2]), hw2, strlen(hw2));
+		 	 }
+		 	 else
+		 	 {
+
+		 		 	 char hw2[] = "Credits";
+		 	   		memcpy(&(cfg.buffer[3][4]), hw2, strlen(hw2));
+		 	 }
+
+		 	 if (menuvalue == 2)
+		 	 {
+
+		   	    	char hw3[] = "-> Restart";
+		   	    	memcpy(&(cfg.buffer[4][2]), hw3, strlen(hw3));
+		 	 }
+		 	 else
+		 	 {
+		   	    	char hw3[] = "Restart";
+		   	    	memcpy(&(cfg.buffer[4][4]), hw3, strlen(hw3));
+		 	 }
+		 	   	display_rewrite_buffer(&cfg);
+
+
+		 	   if(Joystick[0]>1000 && Joystick[0]<3000  && Joystick[1] < 1000)
+		 	   	{ // gora
+		 		   	   	    menuvalue = menuvalue - 1;
+		 	   				if(menuvalue < 0) menuvalue= 0;
+		 			 	   HAL_Delay(500);
+		 	   	}
+		 	   	else if(Joystick[0]>1000 && Joystick[0]<3000  && Joystick[1] > 3000)
+		 	   	{ //dol
+		 	   			menuvalue = menuvalue +1;
+		 	   			if(menuvalue > 2)
+		 	   				{
+		 	   				menuvalue = 2;
+		 	   				}
+		 		 	   HAL_Delay(500);
+		 	   	}
+
+		 	   HAL_Delay(1);
+		 	  if(HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_3) == GPIO_PIN_RESET)
+		 	  			  {
+		 	  				if (menu == 1)
+		 	  				{
+		 	  					if(menuvalue == 0)
+		 	  					 	 {
+		 	  							gameon = 1;
+		 	  							menu = 0;
+		 	  							menuvalue = 0;
+			 	  						HAL_Delay(100);
+		 	  					  	}
+
+		 	  					if(menuvalue == 1)
+		 	  						{
+		 	  						  menu = 2;
+		 	  						  display_clear_buffer(&cfg);
+
+		 	  						 char hw5[] = "Marta Wiatrzyk";
+		 	  						 memcpy(&(cfg.buffer[1][0]), hw5, strlen(hw5));
+		 	  						 char hw6[] = "Dami Urbaniak";
+		 	  						 memcpy(&(cfg.buffer[3][0]), hw6, strlen(hw6));
+		 	  						 display_rewrite_buffer(&cfg);
+
+
+		 	  						 while(menu == 2)
+		 	  						 {
+		 	  					 	  if(HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_3) == GPIO_PIN_RESET)
+		 	  					 	  {
+		 	  					 		  menu = 1;
+		 	  					 		  HAL_Delay(500);
+		 	  					 	  }
+		 	  						 }
+		 	  					  }
+		 	  					 if(menuvalue == 2) {//restart
+		 	  							menu = 0;
+		 	  							menuvalue = 0;
+		 	  							 HAL_TIM_Base_Start_IT(&htim2);
+		 	  						 }
+		 	  			    }
+
+		 	  		}
+
 }
 /* USER CODE END PFP */
 
@@ -571,16 +753,24 @@ int main(void)
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
   MX_SPI1_Init();
+  MX_DAC_Init();
+  MX_TIM2_Init();
+  MX_TIM6_Init();
   MX_DMA_Init();
   MX_ADC1_Init();
-  MX_TIM2_Init();
+  MX_TIM4_Init();
   /* USER CODE BEGIN 2 */
 
-  	HAL_ADC_Start_DMA(&hadc1, Joystick, 2);
+	HAL_ADC_Start_DMA(&hadc1, Joystick, 2);
+	 HAL_DAC_Start(&hdac, DAC_CHANNEL_1);
+	 HAL_TIM_Base_Start_IT(&htim6);
   	start();
   	random_shape();
-  	display_set_dxy(&cfg, horizontal, 0, 0);
-  	display_plansza(&cfg,Plansza);
+  	//display_set_dxy(&cfg, horizontal, 0, 0);
+  	  	//display_plansza(&cfg,Plansza);
+
+
+
 
   /* USER CODE END 2 */
 
@@ -588,17 +778,38 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1)
   {
+	  //HAL_DAC_SetValue(&hdac,DAC_CHANNEL_1,DAC_ALIGN_12B_R, rawData[z]);
 
 		if(round < next_round)
 		{
+
 		 	 HAL_TIM_Base_Start_IT(&htim2);
+		 	 HAL_Delay(500);
+		 	 if(HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_3) == GPIO_PIN_RESET)
+		 		{
+		 			gameon = 0;
+		 			menu = 1;
+		 			while(gameon == 0)
+		 			{
+		 				if(HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_3) == GPIO_PIN_SET)
+		 					menu_();
+		 			}
+		 		}
 		}
 		else if(round == next_round)
 		{
-			next_round = next_round +1;
+			if(gameon == 1)
+			{
+				next_round = next_round +1;
+			}
+			else
+			{
+				menu_();
+			}
 		}
 
 
+		value = HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_3);
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
@@ -668,7 +879,7 @@ static void MX_ADC1_Init(void)
   /** Configure the global features of the ADC (Clock, Resolution, Data Alignment and number of conversion) 
   */
   hadc1.Instance = ADC1;
-  hadc1.Init.ClockPrescaler = ADC_CLOCK_SYNC_PCLK_DIV8;
+  hadc1.Init.ClockPrescaler = ADC_CLOCK_SYNC_PCLK_DIV4;
   hadc1.Init.Resolution = ADC_RESOLUTION_12B;
   hadc1.Init.ScanConvMode = ENABLE;
   hadc1.Init.ContinuousConvMode = ENABLE;
@@ -678,7 +889,7 @@ static void MX_ADC1_Init(void)
   hadc1.Init.DataAlign = ADC_DATAALIGN_RIGHT;
   hadc1.Init.NbrOfConversion = 2;
   hadc1.Init.DMAContinuousRequests = ENABLE;
-  hadc1.Init.EOCSelection = ADC_EOC_SEQ_CONV;
+  hadc1.Init.EOCSelection = ADC_EOC_SINGLE_CONV;
   if (HAL_ADC_Init(&hadc1) != HAL_OK)
   {
     Error_Handler();
@@ -703,6 +914,44 @@ static void MX_ADC1_Init(void)
   /* USER CODE BEGIN ADC1_Init 2 */
 
   /* USER CODE END ADC1_Init 2 */
+
+}
+
+/**
+  * @brief DAC Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_DAC_Init(void)
+{
+
+  /* USER CODE BEGIN DAC_Init 0 */
+
+  /* USER CODE END DAC_Init 0 */
+
+  DAC_ChannelConfTypeDef sConfig = {0};
+
+  /* USER CODE BEGIN DAC_Init 1 */
+
+  /* USER CODE END DAC_Init 1 */
+  /** DAC Initialization 
+  */
+  hdac.Instance = DAC;
+  if (HAL_DAC_Init(&hdac) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /** DAC channel OUT1 config 
+  */
+  sConfig.DAC_Trigger = DAC_TRIGGER_NONE;
+  sConfig.DAC_OutputBuffer = DAC_OUTPUTBUFFER_ENABLE;
+  if (HAL_DAC_ConfigChannel(&hdac, &sConfig, DAC_CHANNEL_1) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN DAC_Init 2 */
+
+  /* USER CODE END DAC_Init 2 */
 
 }
 
@@ -789,6 +1038,89 @@ static void MX_TIM2_Init(void)
 
 }
 
+/**
+  * @brief TIM4 Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_TIM4_Init(void)
+{
+
+  /* USER CODE BEGIN TIM4_Init 0 */
+
+  /* USER CODE END TIM4_Init 0 */
+
+  TIM_ClockConfigTypeDef sClockSourceConfig = {0};
+  TIM_MasterConfigTypeDef sMasterConfig = {0};
+
+  /* USER CODE BEGIN TIM4_Init 1 */
+
+  /* USER CODE END TIM4_Init 1 */
+  htim4.Instance = TIM4;
+  htim4.Init.Prescaler = 84;
+  htim4.Init.CounterMode = TIM_COUNTERMODE_UP;
+  htim4.Init.Period = 63;
+  htim4.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
+  htim4.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
+  if (HAL_TIM_Base_Init(&htim4) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  sClockSourceConfig.ClockSource = TIM_CLOCKSOURCE_INTERNAL;
+  if (HAL_TIM_ConfigClockSource(&htim4, &sClockSourceConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  sMasterConfig.MasterOutputTrigger = TIM_TRGO_RESET;
+  sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
+  if (HAL_TIMEx_MasterConfigSynchronization(&htim4, &sMasterConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN TIM4_Init 2 */
+
+  /* USER CODE END TIM4_Init 2 */
+
+}
+
+/**
+  * @brief TIM6 Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_TIM6_Init(void)
+{
+
+  /* USER CODE BEGIN TIM6_Init 0 */
+
+  /* USER CODE END TIM6_Init 0 */
+
+  TIM_MasterConfigTypeDef sMasterConfig = {0};
+
+  /* USER CODE BEGIN TIM6_Init 1 */
+
+  /* USER CODE END TIM6_Init 1 */
+  htim6.Instance = TIM6;
+  htim6.Init.Prescaler = 84;
+  htim6.Init.CounterMode = TIM_COUNTERMODE_UP;
+  htim6.Init.Period = 63;
+  htim6.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
+  if (HAL_TIM_Base_Init(&htim6) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  sMasterConfig.MasterOutputTrigger = TIM_TRGO_RESET;
+  sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
+  if (HAL_TIMEx_MasterConfigSynchronization(&htim6, &sMasterConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN TIM6_Init 2 */
+
+  /* USER CODE END TIM6_Init 2 */
+
+}
+
 /** 
   * Enable DMA controller clock
   */
@@ -823,10 +1155,14 @@ static void MX_GPIO_Init(void)
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(GPIOB, DC_Pin|RST_Pin|CE_Pin, GPIO_PIN_RESET);
 
-  /*Configure GPIO pins : PD0 PD1 PD2 PD3 
-                           PD4 */
-  GPIO_InitStruct.Pin = GPIO_PIN_0|GPIO_PIN_1|GPIO_PIN_2|GPIO_PIN_3 
-                          |GPIO_PIN_4;
+  /*Configure GPIO pin : PA3 */
+  GPIO_InitStruct.Pin = GPIO_PIN_3;
+  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+  GPIO_InitStruct.Pull = GPIO_PULLUP;
+  HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+
+  /*Configure GPIO pins : PD0 PD1 PD2 PD4 */
+  GPIO_InitStruct.Pin = GPIO_PIN_0|GPIO_PIN_1|GPIO_PIN_2|GPIO_PIN_4;
   GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING;
   GPIO_InitStruct.Pull = GPIO_PULLUP;
   HAL_GPIO_Init(GPIOD, &GPIO_InitStruct);
@@ -847,9 +1183,6 @@ static void MX_GPIO_Init(void)
 
   HAL_NVIC_SetPriority(EXTI2_IRQn, 0, 0);
   HAL_NVIC_EnableIRQ(EXTI2_IRQn);
-
-  HAL_NVIC_SetPriority(EXTI3_IRQn, 0, 0);
-  HAL_NVIC_EnableIRQ(EXTI3_IRQn);
 
   HAL_NVIC_SetPriority(EXTI4_IRQn, 0, 0);
   HAL_NVIC_EnableIRQ(EXTI4_IRQn);
