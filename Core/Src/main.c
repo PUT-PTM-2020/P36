@@ -26,6 +26,7 @@
 #include "string.h"
 #include "stm32f4xx_hal.h"
 #include "stm32f4xx.h"
+#include "bitmaps.h"
 #include "display.h"
 #include <stdio.h>
 #include <stdlib.h>
@@ -39,20 +40,7 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
-time_t t;
-void new_shape();
-void print_figura();
-void display_srodek(uint8_t plansza_wyswietlana[48][38]);
-void dodawaniewartoscidotablicy();
-_Bool check_table(uint8_t table[48][38]);
-void czyszczenie();
-void game();
-void random_shape();
-_Bool game_over();
-void rotate();
-void full_line();
-void punkty();
-void menu_();
+
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -69,123 +57,31 @@ DAC_HandleTypeDef hdac;
 SPI_HandleTypeDef hspi1;
 
 TIM_HandleTypeDef htim2;
-TIM_HandleTypeDef htim4;
 TIM_HandleTypeDef htim6;
 
 /* USER CODE BEGIN PV */
+
+// display
 struct display_config cfg;
-static uint8_t shape[8][8];
-int warx = 12,wary = 4;
-int round = 1, next_round = 1;
-int punkciki= 0;
+
+//joystick
 uint16_t Joystick[2];
-int value;
-int gameon = 0 ,menu = 1;
+
+//game
+int round = 1, next_round = 1;
+int points = 0;
+int gameon = 0, menu = 1;
 int menuvalue = 0 ;
-int z;
-extern unsigned char rawData[122489];
 
+//shape
+static uint8_t shape[8][8];
+int value_x = 12,value_y = 4;
+int current_x, current_y;
 
-uint8_t tablica_czysta[48][38] = {
-				{1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1},
-				{1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1},
-				{1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1},
-				{1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1},
-				{1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1},
-				{1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1},
-				{1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1},
-				{1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1},
-				{1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1},
-				{1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1},
-				{1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1},
-				{1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1},
-				{1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1},
-				{1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1},
-				{1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1},
-				{1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1},
-				{1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1},
-				{1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1},
-				{1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1},
-				{1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1},
-				{1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1},
-				{1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1},
-				{1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1},
-				{1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1},
-				{1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1},
-				{1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1},
-				{1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1},
-				{1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1},
-				{1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1},
-				{1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1},
-				{1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1},
-				{1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1},
-				{1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1},
-				{1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1},
-				{1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1},
-				{1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1},
-				{1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1},
-				{1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1},
-				{1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1},
-				{1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1},
-				{1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1},
-				{1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1},
-				{1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1},
-				{1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1},
-				{1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1},
-				{1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1},
-				{1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1},
-				{1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1}
-};
-uint8_t plansza_wyswietlana[48][38] = {
-		{1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1},
-		{1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1},
-		{1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1},
-		{1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1},
-		{1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1},
-		{1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1},
-		{1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1},
-		{1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1},
-		{1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1},
-		{1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1},
-		{1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1},
-		{1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1},
-		{1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1},
-		{1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1},
-		{1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1},
-		{1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1},
-		{1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1},
-		{1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1},
-		{1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1},
-		{1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1},
-		{1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1},
-		{1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1},
-		{1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1},
-		{1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1},
-		{1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1},
-		{1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1},
-		{1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1},
-		{1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1},
-		{1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1},
-		{1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1},
-		{1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1},
-		{1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1},
-		{1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1},
-		{1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1},
-		{1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1},
-		{1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1},
-		{1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1},
-		{1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1},
-		{1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1},
-		{1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1},
-		{1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1},
-		{1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1},
-		{1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1},
-		{1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1},
-		{1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1},
-		{1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1},
-		{1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1},
-		{1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1}
-};
+//audio
+extern unsigned char rawData[409898];
+int musicvalue = 0;
+int song, off = 0;
 
 /* USER CODE END PV */
 
@@ -198,54 +94,86 @@ static void MX_TIM2_Init(void);
 static void MX_TIM6_Init(void);
 static void MX_DMA_Init(void);
 static void MX_ADC1_Init(void);
-static void MX_TIM4_Init(void);
 /* USER CODE BEGIN PFP */
 
+//display
+void display_centre(uint8_t plansza_wyswietlana[48][38]);
+void display_points();
+void menu_();
+
+//game
+_Bool check_table(uint8_t table[48][38]);
+void clear_table();
+void add_shape();
+void full_line();
+_Bool game_over();
+
+//shapes
+void new_shape();
+void random_shape();
+void rotate();
+
+
+/* USER CODE END PFP */
+
+/* Private user code ---------------------------------------------------------*/
+/* USER CODE BEGIN 0 */
 
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim){
 if(htim->Instance == TIM2)
 	{
+		if(round < 10 ) {htim2.Init.Period = 899;}
+		if(round > 10 ) {htim2.Init.Period = 800;}
+		if(round > 20 ) {htim2.Init.Period = 700;}
+		if(round > 30 ) {htim2.Init.Period = 600;}
+		if(round > 40 ) {htim2.Init.Period = 500;}
+		if(round > 50 ) {htim2.Init.Period = 400;}
+		if(round > 60 ) {htim2.Init.Period = 300;}
+		if(round > 70 ) {htim2.Init.Period = 200;}
+		if(round > 80 ) {htim2.Init.Period = 100;}
+		if(round > 90 ) {htim2.Init.Period = 50;}
+
 	if(Joystick[0] < 1000 && Joystick[1]>1000 && Joystick[1]<3000 )
 	{//lewo
-		czyszczenie();
-		warx = warx + 2;
-		dodawaniewartoscidotablicy(plansza_wyswietlana);
+		clear_table();
+		value_x = value_x + 2;
+		add_shape(plansza_wyswietlana);
 
 		if(check_table(plansza_wyswietlana) == 0)
 		{
-			warx = warx - 2;
-			czyszczenie();
-			dodawaniewartoscidotablicy(plansza_wyswietlana);
+			value_x = value_x - 2;
+			clear_table();
+			add_shape(plansza_wyswietlana);
 		}
 
 	}
 	else if(Joystick[0] > 2500  && Joystick[1]>1000 && Joystick[1]<3000)
 	{//prawo
-		czyszczenie();
-		warx = warx - 2;
-		dodawaniewartoscidotablicy(plansza_wyswietlana);
+		clear_table();
+		value_x = value_x - 2;
+		add_shape(plansza_wyswietlana);
 
 		if(check_table(plansza_wyswietlana) == 0)
 		{
-			warx = warx + 2;
-			czyszczenie();
-			dodawaniewartoscidotablicy(plansza_wyswietlana);
+			value_x = value_x + 2;
+			clear_table();
+			add_shape(plansza_wyswietlana);
 		}
 	}
 	else if(Joystick[0]>1000 && Joystick[0]<3000  && Joystick[1] < 1000)
 	{////gora
 			rotate();
-			dodawaniewartoscidotablicy(plansza_wyswietlana);
+			add_shape(plansza_wyswietlana);
 	}
 	else if(Joystick[0]>1000 && Joystick[0]<3000  && Joystick[1] > 3000)
 	{//dol
-			wary = wary + 2;
-			dodawaniewartoscidotablicy(plansza_wyswietlana);
+			value_y = value_y + 2;
+			add_shape(plansza_wyswietlana);
 
 	}
 	else
 	{
-		dodawaniewartoscidotablicy(plansza_wyswietlana);
+		add_shape(plansza_wyswietlana);
 	}
 
 if (gameon == 1){
@@ -255,18 +183,18 @@ if (gameon == 1){
 	display_rewrite_buffer(&cfg);
 	display_set_dxy(&cfg, horizontal, 0, 0);
 	display_plansza(&cfg,Plansza);
-	display_srodek(plansza_wyswietlana);
-	punkty();
+	display_centre(plansza_wyswietlana);
+	display_points();
 	if(check_table(plansza_wyswietlana))
 	     {
-		 wary=wary+2;
-		 czyszczenie();
+		 value_y=value_y+2;
+		 clear_table();
 	     }
 	else
 	{
-		wary=wary-2;
-		czyszczenie();
-		dodawaniewartoscidotablicy(plansza_wyswietlana);
+		value_y=value_y-2;
+		clear_table();
+		add_shape(plansza_wyswietlana);
 
 
 		full_line();
@@ -274,8 +202,8 @@ if (gameon == 1){
 		display_rewrite_buffer(&cfg);
 		display_set_dxy(&cfg, horizontal, 0, 0);
 		display_plansza(&cfg,Plansza);
-		display_srodek(plansza_wyswietlana);
-		punkty();
+		display_centre(plansza_wyswietlana);
+		display_points();
 
 		for (int i = 0 ; i < 48; i++) {
 		            for (int j = 0; j < 38; j++)
@@ -293,28 +221,30 @@ if (gameon == 1){
 			 char hw[] = "Koniec gry";
 			 memcpy(&(cfg.buffer[2][2]), hw, strlen(hw));
 			 display_rewrite_buffer(&cfg);
+			 HAL_TIM_Base_Stop_IT(&htim6);
+
 		}
 		else
 		{
 
 			random_shape();
-		 	wary= 4;
-		 	warx = 12;
+		 	value_y= 4;
+		 	value_x = 12;
 		 	round = round +1;
 		}
   	 	HAL_TIM_Base_Stop_IT(&htim2);
 	  }
 	}
+}
+if(htim->Instance == TIM6){
+		song=song+2;
+		if(song == 409000)
+			song=0;
 
-/*if(htim->Instance == TIM6)
-	{	//y+= 0.01;
-	    z++;
-	  if(z == 122489)
-	    	z=0;
-  }*/
-
+		HAL_DAC_SetValue(&hdac,DAC_CHANNEL_1,DAC_ALIGN_12B_R, rawData[song]);
 	}
 }
+
 
 void start() //koniec gierki
 {
@@ -331,6 +261,7 @@ void start() //koniec gierki
 	display_rewrite_buffer(&cfg);
 
 }
+
 
 _Bool game_over()
 {
@@ -473,7 +404,7 @@ void random_shape()
 }
 
 // wyswietla tablice z gra
-void display_srodek(uint8_t srodek[48][38])
+void display_centre(uint8_t srodek[48][38])
 {
 	for(int wiersz = 1; wiersz < 7; wiersz++)
 	{
@@ -519,7 +450,7 @@ void display_srodek(uint8_t srodek[48][38])
 }
 
 //zamienia tablice wyswietlana na tablice czysta
-void czyszczenie()
+void clear_table()
 {
     for (int i = 0 ; i < 48; i++) {
             for (int j = 0; j < 38; j++)
@@ -530,12 +461,12 @@ void czyszczenie()
 }
 
 //nakłada klocek na tablice wyswietlana
-void dodawaniewartoscidotablicy()
+void add_shape()
 {
 	for (int i = 0 ; i < 8; i++) {
-		for (int j = 0, xwar = warx; j < 8; j++)
+		for (int j = 0, xwar = value_x; j < 8; j++)
 		 {
-			plansza_wyswietlana[wary+i][xwar] = plansza_wyswietlana[wary+i][xwar] + shape[i][j];
+			plansza_wyswietlana[value_y+i][xwar] = plansza_wyswietlana[value_y+i][xwar] + shape[i][j];
 			xwar = xwar +1;
 		 }
 
@@ -572,7 +503,7 @@ void full_line()
                 {
                 	//zmiana punktów
 
-                    punkciki = punkciki + (38*round);
+                    points = points + (38*round);
 
                     while(i>3)
                     	{
@@ -591,15 +522,15 @@ void full_line()
         }
 }
 
-void punkty()
+void display_points()
 {   int punkty_wyswietlane[6] = {0,0,0,0,0,0};
 
-    punkty_wyswietlane[5] = punkciki%10;
-    punkty_wyswietlane[4] = (punkciki%100 - punkty_wyswietlane[5])/10;
-    punkty_wyswietlane[3] = (punkciki%1000 - (punkty_wyswietlane[4]*10)- punkty_wyswietlane[5])/100;
-    punkty_wyswietlane[2] = (punkciki%10000 - (punkty_wyswietlane[3]*100)- (punkty_wyswietlane[4]*10)- punkty_wyswietlane[5])/1000;
-    punkty_wyswietlane[1] = (punkciki%100000- (punkty_wyswietlane[2]*1000) - (punkty_wyswietlane[3]*100)- (punkty_wyswietlane[4]*10)- punkty_wyswietlane[5])/10000;
-    punkty_wyswietlane[0] = punkciki/100000;
+    punkty_wyswietlane[5] = points%10;
+    punkty_wyswietlane[4] = (points%100 - punkty_wyswietlane[5])/10;
+    punkty_wyswietlane[3] = (points%1000 - (punkty_wyswietlane[4]*10)- punkty_wyswietlane[5])/100;
+    punkty_wyswietlane[2] = (points%10000 - (punkty_wyswietlane[3]*100)- (punkty_wyswietlane[4]*10)- punkty_wyswietlane[5])/1000;
+    punkty_wyswietlane[1] = (points%100000- (punkty_wyswietlane[2]*1000) - (punkty_wyswietlane[3]*100)- (punkty_wyswietlane[4]*10)- punkty_wyswietlane[5])/10000;
+    punkty_wyswietlane[0] = points/100000;
 
 
 
@@ -653,73 +584,162 @@ void menu_()
 		   	    	char hw3[] = "Restart";
 		   	    	memcpy(&(cfg.buffer[4][4]), hw3, strlen(hw3));
 		 	 }
+		 	 if (menuvalue == 3)
+		     {
+
+		 		    char hw4[] = "-> Options";
+		 			memcpy(&(cfg.buffer[5][2]), hw4, strlen(hw4));
+		     }
+		 	 else
+		 	 {
+		 		    char hw4[] = "Options";
+		 			memcpy(&(cfg.buffer[5][4]), hw4, strlen(hw4));
+		 	 }
 		 	   	display_rewrite_buffer(&cfg);
 
 
 		 	   if(Joystick[0]>1000 && Joystick[0]<3000  && Joystick[1] < 1000)
-		 	   	{ // gora
+		 	   	{ // gora menu
 		 		   	   	    menuvalue = menuvalue - 1;
 		 	   				if(menuvalue < 0) menuvalue= 0;
+		 	   	// gora dzwiek
+		 	   			menuvalue = menuvalue - 1;
+		 	   		    if(menuvalue < 0) menuvalue= 0;
 		 			 	   HAL_Delay(500);
 		 	   	}
 		 	   	else if(Joystick[0]>1000 && Joystick[0]<3000  && Joystick[1] > 3000)
-		 	   	{ //dol
+		 	   	{ //dol menu
 		 	   			menuvalue = menuvalue +1;
-		 	   			if(menuvalue > 2)
+		 	   			if(menuvalue > 3)
 		 	   				{
-		 	   				menuvalue = 2;
+		 	   				menuvalue = 3;
 		 	   				}
+		 	   		//dol dzwiek
+		 	   		      musicvalue = musicvalue +1;
+		 	   		     if(musicvalue > 1){
+		 	   		    	musicvalue = 1;
+		 	   		      }
 		 		 	   HAL_Delay(500);
 		 	   	}
 
 		 	   HAL_Delay(1);
-		 	  if(HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_3) == GPIO_PIN_RESET)
+		 	   if(HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_3) == GPIO_PIN_RESET)
 		 	  			  {
-		 	  				if (menu == 1)
+		 	  	    if (menu == 1)
 		 	  				{
-		 	  					if(menuvalue == 0)
+		 	  			 if(menuvalue == 0)
 		 	  					 	 {
 		 	  							gameon = 1;
 		 	  							menu = 0;
 		 	  							menuvalue = 0;
+		 	  							clear_table();
+
 			 	  						HAL_Delay(100);
+
 		 	  					  	}
 
-		 	  					if(menuvalue == 1)
+		 	  		     if(menuvalue == 1)
 		 	  						{
-		 	  						  menu = 2;
-		 	  						  display_clear_buffer(&cfg);
-
-		 	  						 char hw5[] = "Marta Wiatrzyk";
-		 	  						 memcpy(&(cfg.buffer[1][0]), hw5, strlen(hw5));
-		 	  						 char hw6[] = "Dami Urbaniak";
-		 	  						 memcpy(&(cfg.buffer[3][0]), hw6, strlen(hw6));
-		 	  						 display_rewrite_buffer(&cfg);
-
-
-		 	  						 while(menu == 2)
-		 	  						 {
-		 	  					 	  if(HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_3) == GPIO_PIN_RESET)
-		 	  					 	  {
+		 	  						menu = 2;
+		 	  						display_rewrite_buffer(&cfg);
+		 	  						display_set_dxy(&cfg, horizontal, 0, 0);
+		 	  						display_plansza(&cfg,credits_bitmap);
+		 	  						HAL_Delay(500);
+		 	  							while(menu == 2){
+		 	  								if(HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_3) == GPIO_PIN_RESET){
 		 	  					 		  menu = 1;
-		 	  					 		  HAL_Delay(500);
-		 	  					 	  }
+		 	  					 		  HAL_Delay(500);}
 		 	  						 }
 		 	  					  }
-		 	  					 if(menuvalue == 2) {//restart
+		 	  		    if(menuvalue == 2) {//restart
 		 	  							menu = 0;
 		 	  							menuvalue = 0;
-		 	  							 HAL_TIM_Base_Start_IT(&htim2);
+		 	  							random_shape();
+		 	  							value_y= 4;
+		 	  							value_x = 12;
+		 	  							round = 1;
+		 	  							next_round = 1;
+		 	  							points = 0;
+		 	  						 for (int i = 0 ; i < 48; i++) {
+		 	  							for (int j = 0; j < 38; j++){
+		 	  								plansza_wyswietlana[i][j] = tablica_czysta2[i][j];
+		 	  								tablica_czysta[i][j] = tablica_czysta2[i][j];}}
+		 	  							gameon = 1;
 		 	  						 }
+		 	  			if(menuvalue == 3) {//opcje muzyki
+		 	  						  menu = 3;
+		 	  					      musicvalue = 0;
+		 	  						  HAL_Delay(500);
+
+		 	  					 while(menu == 3)
+		 	  						 {
+		 	  						display_clear_buffer(&cfg);
+		 	  						if (musicvalue == 0 && off == 0){
+		 	  							char hw7[] = "-> Music On";
+		 	  							memcpy(&(cfg.buffer[1][0]), hw7, strlen(hw7));}
+
+		 	  						else if(musicvalue == 1 && off == 0){
+		 	  							char hw7[] = "Music On";
+		 	  							memcpy(&(cfg.buffer[1][0]), hw7, strlen(hw7)); }
+
+		 	  						else if(musicvalue == 0 && off == 1){
+		 	  							char hw8[] = "-> Music Off";
+		 	  							memcpy(&(cfg.buffer[1][0]), hw8, strlen(hw8));}
+		 	  						else{
+		 	  							char hw8[] = "Music Off";
+		 	  							memcpy(&(cfg.buffer[1][0]), hw8, strlen(hw8));}
+
+		 	  						if (musicvalue == 1){
+		 	  							char hw6[] = "-> Back";
+		 	  							memcpy(&(cfg.buffer[3][0]), hw6, strlen(hw6));}
+		 	  						else{
+		 	  							char hw6[] = "Back";
+		 	  							memcpy(&(cfg.buffer[3][0]), hw6, strlen(hw6));}
+
+		 	  						display_rewrite_buffer(&cfg);
+
+		 	  						if(Joystick[0]>1000 && Joystick[0]<3000  && Joystick[1] < 1000)
+		 	  						{
+		 	  						// gora dzwiek
+		 	  							musicvalue= 0;
+		 	  						HAL_Delay(500);
+		 	  						}
+		 	  						else if(Joystick[0]>1000 && Joystick[0]<3000  && Joystick[1] > 3000)
+		 	  						{
+		 	  						//dol dzwiek
+		 	  							musicvalue = 1;
+		 	  						HAL_Delay(500);
+		 	  						}
+
+		 	  						else if(HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_3) == GPIO_PIN_RESET)
+		 	  					 	 {
+		 	  					 		if(musicvalue == 0){
+		 	  					 	     if(off == 1)
+		 	  					 	     {
+		 	  					 	    	HAL_TIM_Base_Start_IT(&htim6);
+		 	  					 	    	off = 0;
+		 	  					 	     }
+		 	  					 	     else
+		 	  					 	     {
+		 	  					 	    	 off = 1;
+		 	  					 	    	HAL_TIM_Base_Stop_IT(&htim6);
+		 	  					 	     }
+		 	  					 	    }
+		 	  					 	if (musicvalue == 1){
+		 	  					 		 menu = 1;
+		 	  					 		}
+	 	  					 		HAL_Delay(500);
+
+		 	  					 }
+
+		 	  					 	 }
+		 	  					}
+
 		 	  			    }
 
 		 	  		}
 
 }
-/* USER CODE END PFP */
-
-/* Private user code ---------------------------------------------------------*/
-/* USER CODE BEGIN 0 */
 
 /* USER CODE END 0 */
 
@@ -730,6 +750,7 @@ void menu_()
 int main(void)
 {
   /* USER CODE BEGIN 1 */
+
 	srand(time(NULL));
   /* USER CODE END 1 */
   
@@ -758,19 +779,13 @@ int main(void)
   MX_TIM6_Init();
   MX_DMA_Init();
   MX_ADC1_Init();
-  MX_TIM4_Init();
   /* USER CODE BEGIN 2 */
 
 	HAL_ADC_Start_DMA(&hadc1, Joystick, 2);
-	 HAL_DAC_Start(&hdac, DAC_CHANNEL_1);
-	 HAL_TIM_Base_Start_IT(&htim6);
+	HAL_DAC_Start(&hdac, DAC_CHANNEL_1);
+	HAL_TIM_Base_Start_IT(&htim6);
   	start();
   	random_shape();
-  	//display_set_dxy(&cfg, horizontal, 0, 0);
-  	  	//display_plansza(&cfg,Plansza);
-
-
-
 
   /* USER CODE END 2 */
 
@@ -778,23 +793,24 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-	  //HAL_DAC_SetValue(&hdac,DAC_CHANNEL_1,DAC_ALIGN_12B_R, rawData[z]);
-
 		if(round < next_round)
 		{
-
 		 	 HAL_TIM_Base_Start_IT(&htim2);
 		 	 HAL_Delay(500);
 		 	 if(HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_3) == GPIO_PIN_RESET)
 		 		{
 		 			gameon = 0;
 		 			menu = 1;
+		 			current_x= value_x;
+		 			current_y = value_y;
 		 			while(gameon == 0)
 		 			{
 		 				if(HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_3) == GPIO_PIN_SET)
 		 					menu_();
 		 			}
 		 		}
+
+
 		}
 		else if(round == next_round)
 		{
@@ -807,9 +823,34 @@ int main(void)
 				menu_();
 			}
 		}
+		else if(next_round == 0)
+		{
 
+			             HAL_Delay(1);
+				if(HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_3) == GPIO_PIN_RESET)
+					{             gameon = 0;
+							            menu = 1;
+										menuvalue = 0;
+										random_shape();
+										value_y= 4;
+										value_x = 12;
+										round = 1;
+										next_round = 1;
+										points = 0;
+										display_clear_buffer(&cfg);
+									 for (int i = 0 ; i < 48; i++) {
+									            for (int j = 0; j < 38; j++)
+									             {
+									                plansza_wyswietlana[i][j] = tablica_czysta2[i][j];
+									                tablica_czysta[i][j] = tablica_czysta2[i][j];
+									             }
+									         }
+									 display_rewrite_buffer(&cfg);
+							HAL_TIM_Base_Start_IT(&htim6);
+							HAL_Delay(500);
 
-		value = HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_3);
+						}
+		}
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
@@ -1039,51 +1080,6 @@ static void MX_TIM2_Init(void)
 }
 
 /**
-  * @brief TIM4 Initialization Function
-  * @param None
-  * @retval None
-  */
-static void MX_TIM4_Init(void)
-{
-
-  /* USER CODE BEGIN TIM4_Init 0 */
-
-  /* USER CODE END TIM4_Init 0 */
-
-  TIM_ClockConfigTypeDef sClockSourceConfig = {0};
-  TIM_MasterConfigTypeDef sMasterConfig = {0};
-
-  /* USER CODE BEGIN TIM4_Init 1 */
-
-  /* USER CODE END TIM4_Init 1 */
-  htim4.Instance = TIM4;
-  htim4.Init.Prescaler = 84;
-  htim4.Init.CounterMode = TIM_COUNTERMODE_UP;
-  htim4.Init.Period = 63;
-  htim4.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
-  htim4.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
-  if (HAL_TIM_Base_Init(&htim4) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  sClockSourceConfig.ClockSource = TIM_CLOCKSOURCE_INTERNAL;
-  if (HAL_TIM_ConfigClockSource(&htim4, &sClockSourceConfig) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  sMasterConfig.MasterOutputTrigger = TIM_TRGO_RESET;
-  sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
-  if (HAL_TIMEx_MasterConfigSynchronization(&htim4, &sMasterConfig) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  /* USER CODE BEGIN TIM4_Init 2 */
-
-  /* USER CODE END TIM4_Init 2 */
-
-}
-
-/**
   * @brief TIM6 Initialization Function
   * @param None
   * @retval None
@@ -1149,7 +1145,6 @@ static void MX_GPIO_Init(void)
   /* GPIO Ports Clock Enable */
   __HAL_RCC_GPIOH_CLK_ENABLE();
   __HAL_RCC_GPIOA_CLK_ENABLE();
-  __HAL_RCC_GPIOD_CLK_ENABLE();
   __HAL_RCC_GPIOB_CLK_ENABLE();
 
   /*Configure GPIO pin Output Level */
@@ -1161,31 +1156,12 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Pull = GPIO_PULLUP;
   HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : PD0 PD1 PD2 PD4 */
-  GPIO_InitStruct.Pin = GPIO_PIN_0|GPIO_PIN_1|GPIO_PIN_2|GPIO_PIN_4;
-  GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING;
-  GPIO_InitStruct.Pull = GPIO_PULLUP;
-  HAL_GPIO_Init(GPIOD, &GPIO_InitStruct);
-
   /*Configure GPIO pins : DC_Pin RST_Pin CE_Pin */
   GPIO_InitStruct.Pin = DC_Pin|RST_Pin|CE_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
-
-  /* EXTI interrupt init*/
-  HAL_NVIC_SetPriority(EXTI0_IRQn, 0, 0);
-  HAL_NVIC_EnableIRQ(EXTI0_IRQn);
-
-  HAL_NVIC_SetPriority(EXTI1_IRQn, 0, 0);
-  HAL_NVIC_EnableIRQ(EXTI1_IRQn);
-
-  HAL_NVIC_SetPriority(EXTI2_IRQn, 0, 0);
-  HAL_NVIC_EnableIRQ(EXTI2_IRQn);
-
-  HAL_NVIC_SetPriority(EXTI4_IRQn, 0, 0);
-  HAL_NVIC_EnableIRQ(EXTI4_IRQn);
 
 }
 
